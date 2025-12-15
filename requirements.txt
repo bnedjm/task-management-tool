@@ -1,0 +1,11 @@
+fastapi==0.115.0  # Updated for Python 3.13 compatibility
+uvicorn[standard]==0.32.0  # Updated for Python 3.13 compatibility
+pydantic==2.9.0  # Python 3.13 compatible
+pydantic-settings==2.5.0  # Python 3.13 compatible
+
+httpx==0.27.0  # Updated for Python 3.13 compatibility
+python-multipart==0.0.12  # Updated for Python 3.13 compatibility
+
+# Database
+sqlalchemy==2.0.35  # Updated for Python 3.13 compatibility
+psycopg[binary]==3.2.13  # PostgreSQL adapter (Python 3.13 compatible)

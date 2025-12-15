@@ -1,0 +1,39 @@
+"""SQLAlchemy ORM model for Task."""
+
+from datetime import datetime, timezone
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy.orm import relationship
+
+from ..database import Base
+
+
+def get_utc_now():
+    """Get current UTC time (Python 3.13 compatible)."""
+    return datetime.now(timezone.utc)
+
+
+class TaskModel(Base):
+    """ORM model for Task entity.
+
+    This is separate from the domain entity to maintain clean separation
+    between domain and infrastructure layers.
+    """
+
+    __tablename__ = "tasks"
+
+    id = Column(String(36), primary_key=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    deadline = Column(DateTime, nullable=False)
+    completed = Column(Boolean, default=False, nullable=False)
+    project_id = Column(String(36), ForeignKey("projects.id"), nullable=True)
+    created_at = Column(DateTime, default=get_utc_now, nullable=False)
+    updated_at = Column(DateTime, default=get_utc_now, onupdate=get_utc_now, nullable=False)
+
+    # Relationship (optional, for ORM queries)
+    project = relationship("ProjectModel", back_populates="tasks")
+
+    def __repr__(self) -> str:
+        """String representation."""
+        return f"<TaskModel(id={self.id}, title={self.title})>"

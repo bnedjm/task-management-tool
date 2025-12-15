@@ -1,0 +1,28 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: task-management-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${PROD_DATABASE_URL:-sqlite:////data/tasks.db}
+      - AUTO_COMPLETE_PROJECTS=${AUTO_COMPLETE_PROJECTS:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    env_file:
+      - .env
+    volumes:
+      - ./data:/data
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  data:
+  logs:
