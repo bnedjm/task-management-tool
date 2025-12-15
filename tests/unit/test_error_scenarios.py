@@ -10,11 +10,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from src.application.commands.project_commands import (
-    CompleteProjectCommand,
-    CreateProjectCommand,
-    DeleteProjectCommand,
-)
+from src.application.commands.project_commands import CompleteProjectCommand, DeleteProjectCommand
 from src.application.commands.task_commands import (
     CompleteTaskCommand,
     CreateTaskCommand,
@@ -25,7 +21,6 @@ from src.application.services.project_service import ProjectService
 from src.application.services.task_service import TaskService
 from src.domain.entities.project import Project
 from src.domain.entities.task import Task
-from src.domain.exceptions.project_exceptions import ProjectNotFoundError
 from src.domain.exceptions.task_exceptions import TaskNotFoundError
 from src.domain.value_objects.deadline import Deadline
 from src.domain.value_objects.ids import ProjectId, TaskId
@@ -398,9 +393,17 @@ class TestTimezoneEdgeCases:
 
     def test_deadline_at_daylight_saving_transition(self, task_service, mock_uow, mock_event_bus):
         """Task with deadline during daylight saving time transition."""
-        # Use a fixed date that's during DST transition (varies by region)
+        # Use a future date that's during DST transition (varies by region)
         # Using UTC avoids DST issues, but testing edge case
-        transition_time = datetime(2025, 3, 9, 2, 30, tzinfo=timezone.utc)
+        # Ensure it's in the future by using relative date
+        base_time = datetime.now(timezone.utc)
+        # Add enough days to get to a future date, then set specific time
+        transition_time = base_time.replace(
+            month=3, day=9, hour=2, minute=30, second=0, microsecond=0
+        )
+        if transition_time <= base_time:
+            # If the date is in the past, add a year
+            transition_time = transition_time.replace(year=transition_time.year + 1)
 
         command = CreateTaskCommand(
             title="DST Task",
@@ -530,7 +533,9 @@ class TestNullAndNoneHandling:
         )
 
         # Update with None values (should keep original)
-        command = UpdateTaskCommand(task_id=str(task_id), title=None, description=None, deadline=None)
+        command = UpdateTaskCommand(
+            task_id=str(task_id), title=None, description=None, deadline=None
+        )
 
         result = task_service.update_task(command)
 
@@ -542,9 +547,7 @@ class TestNullAndNoneHandling:
 class TestIntegrationWithEventHandlers:
     """Test error scenarios in event handler integration."""
 
-    def test_complete_task_when_event_handler_fails(
-        self, task_service, mock_uow, mock_event_bus
-    ):
+    def test_complete_task_when_event_handler_fails(self, task_service, mock_uow, mock_event_bus):
         """Event handler fails but transaction should still commit."""
         task_id = TaskId.generate()
         project_id = ProjectId.generate()
@@ -581,4 +584,3 @@ class TestIntegrationWithEventHandlers:
         assert "Event bus down" in str(exc_info.value)
         # But transaction was committed before event publishing
         assert mock_uow.commit.called
-

@@ -60,13 +60,16 @@ class TaskRepository(ABC):
     def list_by_filter(
         self,
         completed: Optional[bool] = None,
-        overdue: bool = False,
+        overdue: Optional[bool] = None,
+        project_id: Optional[ProjectId] = None,
     ) -> List[Task]:
         """Retrieve tasks matching filter criteria.
 
         Args:
             completed: Filter by completion status (None for all).
-            overdue: Filter for overdue tasks only.
+            overdue: Filter for overdue tasks (None for all, True for overdue,
+                False for not overdue).
+            project_id: Filter by project ID (None for all projects).
 
         Returns:
             List[Task]: List of tasks matching the criteria.

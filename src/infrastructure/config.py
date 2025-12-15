@@ -36,13 +36,13 @@ class Config(BaseSettings):
 
     def get_database_url(self) -> str:
         """Get the appropriate database URL, prioritizing production settings.
-        
+
         Priority:
         1. DATABASE_URL (if set to non-default value, e.g., Railway provides this)
         2. PROD_DATABASE_URL (production override)
         3. DEV_DATABASE_URL (development override)
         4. Default SQLite (local development)
-        
+
         Returns:
             str: Database connection URL to use.
         """
@@ -51,18 +51,19 @@ class Config(BaseSettings):
         default_sqlite = "sqlite:///./data/tasks.db"
         if self.DATABASE_URL and self.DATABASE_URL != default_sqlite:
             return self.DATABASE_URL
-        
+
         # Otherwise, check for environment-specific overrides
         if self.PROD_DATABASE_URL:
             return self.PROD_DATABASE_URL
         if self.DEV_DATABASE_URL:
             return self.DEV_DATABASE_URL
-        
+
         # Fall back to default SQLite
         return self.DATABASE_URL
 
 
 _config_instance: Optional[Config] = None
+
 
 def get_config() -> Config:
     """Get application configuration singleton.

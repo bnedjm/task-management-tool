@@ -432,10 +432,10 @@ class TestProjectTaskLinking:
             },
         )
         project_id = project_response.json()["id"]
-        
+
         # Complete the project
         client.patch(f"/projects/{project_id}/complete")
-        
+
         # Verify project is completed
         project_response = client.get(f"/projects/{project_id}")
         assert project_response.json()["completed"] is True
@@ -458,7 +458,9 @@ class TestProjectTaskLinking:
         # Verify project is now reopened (not completed)
         project_response = client.get(f"/projects/{project_id}")
         project = project_response.json()
-        assert project["completed"] is False, "Project should be reopened when incomplete task is linked"
+        assert (
+            project["completed"] is False
+        ), "Project should be reopened when incomplete task is linked"
         assert project["total_task_count"] == 1
 
     def test_link_completed_task_does_not_reopen_completed_project(self, client):
@@ -473,10 +475,10 @@ class TestProjectTaskLinking:
             },
         )
         project_id = project_response.json()["id"]
-        
+
         # Complete the project
         client.patch(f"/projects/{project_id}/complete")
-        
+
         # Verify project is completed
         project_response = client.get(f"/projects/{project_id}")
         assert project_response.json()["completed"] is True
@@ -491,10 +493,10 @@ class TestProjectTaskLinking:
             },
         )
         task_id = task_response.json()["id"]
-        
+
         # Complete the task
         client.patch(f"/tasks/{task_id}/complete")
-        
+
         # Verify task is completed
         task_response = client.get(f"/tasks/{task_id}")
         assert task_response.json()["completed"] is True
@@ -506,7 +508,9 @@ class TestProjectTaskLinking:
         # Verify project remains completed (not reopened)
         project_response = client.get(f"/projects/{project_id}")
         project = project_response.json()
-        assert project["completed"] is True, "Project should remain completed when completed task is linked"
+        assert (
+            project["completed"] is True
+        ), "Project should remain completed when completed task is linked"
         assert project["total_task_count"] == 1
         assert project["completed_task_count"] == 1
 
@@ -522,10 +526,10 @@ class TestProjectTaskLinking:
             },
         )
         project_id = project_response.json()["id"]
-        
+
         # Complete the project
         client.patch(f"/projects/{project_id}/complete")
-        
+
         # Verify project is completed
         project_response = client.get(f"/projects/{project_id}")
         assert project_response.json()["completed"] is True
@@ -545,7 +549,9 @@ class TestProjectTaskLinking:
         # Verify project is now reopened (not completed)
         project_response = client.get(f"/projects/{project_id}")
         project = project_response.json()
-        assert project["completed"] is False, "Project should be reopened when new task is created with project assignment"
+        assert project["completed"] is False, (
+            "Project should be reopened when new task is created " "with project assignment"
+        )
         assert project["total_task_count"] == 1
 
 

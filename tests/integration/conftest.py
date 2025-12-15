@@ -38,6 +38,7 @@ def client(test_db):
 
     # Reset event bus before each test to ensure clean state
     from src.api import dependencies
+
     dependencies._event_bus = None
 
     with TestClient(app) as test_client:

@@ -228,7 +228,7 @@ class TestProjectDeadlineUpdate:
         """Updating deadline emits event."""
         project = project_factory()
         old_deadline = project.deadline
-        new_deadline = Deadline(datetime(2025, 6, 1))
+        new_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=60))
 
         project.update_deadline(new_deadline, [])
 
@@ -244,7 +244,7 @@ class TestProjectDeadlineUpdate:
         task1_id = TaskId.generate()
         task2_id = TaskId.generate()
 
-        new_deadline = Deadline(datetime(2025, 2, 1))
+        new_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=20))
 
         project.update_deadline(new_deadline, [task1_id, task2_id])
 
@@ -257,7 +257,7 @@ class TestProjectDeadlineUpdate:
     def test_update_deadline_updates_value(self, project_factory):
         """Updating deadline changes the deadline value."""
         project = project_factory()
-        new_deadline = Deadline(datetime(2025, 6, 1))
+        new_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=60))
 
         project.update_deadline(new_deadline, [])
 

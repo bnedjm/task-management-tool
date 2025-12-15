@@ -29,12 +29,6 @@ def future_deadline():
 
 
 @pytest.fixture
-def past_deadline():
-    """Provide a past deadline."""
-    return Deadline(datetime.now(timezone.utc) - timedelta(days=1))
-
-
-@pytest.fixture
 def task_factory():
     """Factory for creating test tasks."""
 

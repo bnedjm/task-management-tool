@@ -42,7 +42,7 @@ def init_database(database_url: str | None = None) -> None:
         else:
             # Fallback: sqlite://data/tasks.db
             db_path = database_url.replace("sqlite://", "", 1)
-        
+
         # Create parent directory if it doesn't exist
         db_file = Path(db_path)
         db_file.parent.mkdir(parents=True, exist_ok=True)
@@ -99,4 +99,3 @@ def get_engine():
     if _engine is None:
         init_database()
     return _engine
-    

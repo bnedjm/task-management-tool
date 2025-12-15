@@ -12,7 +12,11 @@ import pytest
 from src.domain.entities.project import Project
 from src.domain.entities.task import Task
 from src.domain.events.project_events import ProjectDeadlineChangedEvent
-from src.domain.events.task_events import TaskCompletedEvent, TaskCreatedEvent, TaskDeadlineChangedEvent
+from src.domain.events.task_events import (
+    TaskCompletedEvent,
+    TaskCreatedEvent,
+    TaskDeadlineChangedEvent,
+)
 from src.domain.value_objects.deadline import Deadline
 from src.domain.value_objects.ids import ProjectId, TaskId
 from src.infrastructure.config import Config
@@ -165,9 +169,7 @@ class TestAutoCompleteProjectHandler:
         # Should not attempt to save
         assert not mock_project_repository.save.called
 
-    def test_already_completed_project_handled(
-        self, mock_project_repository, mock_config
-    ):
+    def test_already_completed_project_handled(self, mock_project_repository, mock_config):
         """When project is already completed, handler still processes event."""
         handler = AutoCompleteProjectHandler(mock_project_repository, mock_config)
 
@@ -333,8 +335,10 @@ class TestDeadlineWarningChecker:
         with patch("src.infrastructure.events.handlers.logger") as mock_logger:
             handler.handle_created(event)
             # Verify warning was logged
-            assert any("approaching deadline" in str(call).lower() 
-                      for call in mock_logger.warning.call_args_list)
+            assert any(
+                "approaching deadline" in str(call).lower()
+                for call in mock_logger.warning.call_args_list
+            )
 
     def test_no_warn_on_distant_deadline(self, mock_task_repository):
         """When task deadline is far in future, no warning is logged."""
@@ -380,8 +384,10 @@ class TestDeadlineWarningChecker:
         with patch("src.infrastructure.events.handlers.logger") as mock_logger:
             handler.handle_deadline_changed(event)
             # Verify warning was logged
-            assert any("approaching deadline" in str(call).lower() 
-                      for call in mock_logger.warning.call_args_list)
+            assert any(
+                "approaching deadline" in str(call).lower()
+                for call in mock_logger.warning.call_args_list
+            )
 
 
 class TestTaskCompletionLogger:
@@ -467,4 +473,3 @@ class TestEventHandlerErrorHandling:
             handler.handle(event)
             # Verify error was logged
             assert mock_logger.error.called
-

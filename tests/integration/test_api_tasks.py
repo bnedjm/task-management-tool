@@ -310,14 +310,14 @@ class TestAutoCompleteProject:
         config_module._config_instance = None
 
         # Patch at the module level where it's actually imported
-        with patch.object(config_module, '_config_instance', None):
-            with patch.object(config_module, 'Config') as MockConfig:
+        with patch.object(config_module, "_config_instance", None):
+            with patch.object(config_module, "Config") as MockConfig:
                 # Create a config instance with auto-complete enabled
                 mock_config = config_module.Config(AUTO_COMPLETE_PROJECTS=True)
                 MockConfig.return_value = mock_config
-                
+
                 # Patch the get_config to return our enabled config
-                with patch.object(config_module, 'get_config', return_value=mock_config):
+                with patch.object(config_module, "get_config", return_value=mock_config):
                     # Force re-initialization with enabled config
                     dependencies.get_event_bus()
 
@@ -327,7 +327,9 @@ class TestAutoCompleteProject:
                         json={
                             "title": "Auto Complete Project",
                             "description": "Test project",
-                            "deadline": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+                            "deadline": (
+                                datetime.now(timezone.utc) + timedelta(days=30)
+                            ).isoformat(),
                         },
                     )
                     project_id = project_response.json()["id"]
@@ -345,7 +347,9 @@ class TestAutoCompleteProject:
                         json={
                             "title": "Task 1",
                             "description": "Description",
-                            "deadline": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                            "deadline": (
+                                datetime.now(timezone.utc) + timedelta(days=7)
+                            ).isoformat(),
                             "project_id": project_id,
                         },
                     )
@@ -354,7 +358,9 @@ class TestAutoCompleteProject:
                         json={
                             "title": "Task 2",
                             "description": "Description",
-                            "deadline": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                            "deadline": (
+                                datetime.now(timezone.utc) + timedelta(days=7)
+                            ).isoformat(),
                             "project_id": project_id,
                         },
                     )
@@ -392,7 +398,7 @@ class TestAutoCompleteProject:
                     assert (
                         project["completed"] is True
                     ), "Project should be auto-completed when all tasks are done"
-        
+
         # Cleanup: Reset singletons after test
         dependencies._event_bus = None
         config_module._config_instance = None
@@ -407,14 +413,14 @@ class TestAutoCompleteProject:
         # Reset both the event bus and config singleton to ensure clean state
         dependencies._event_bus = None
         config_module._config_instance = None
-        
+
         # Create a real Config instance with auto-complete disabled
         disabled_config = Config(AUTO_COMPLETE_PROJECTS=False)
-        
+
         # Patch get_config in both the config module and dependencies module
         # (dependencies imports get_config directly, so we need to patch it there too)
-        with patch.object(config_module, 'get_config', return_value=disabled_config):
-            with patch.object(dependencies, 'get_config', return_value=disabled_config):
+        with patch.object(config_module, "get_config", return_value=disabled_config):
+            with patch.object(dependencies, "get_config", return_value=disabled_config):
                 # Force re-initialization with disabled config
                 dependencies.get_event_bus()
 
@@ -488,14 +494,13 @@ class TestAutoCompleteProject:
                 assert (
                     project["completed"] is False
                 ), "Project should not be auto-completed when auto-complete is disabled"
-        
+
         # Cleanup: Reset singletons after test
         dependencies._event_bus = None
         config_module._config_instance = None
 
-
     def test_delete_incomplete_task_auto_completes_when_remaining_complete(self, client):
-        """Deleting an incomplete task should auto-complete project if all remaining tasks are complete."""
+        """Deleting incomplete task auto-completes project if all remaining tasks are complete."""
         from src.api import dependencies
         from src.infrastructure import config as config_module
 
@@ -503,12 +508,12 @@ class TestAutoCompleteProject:
         dependencies._event_bus = None
         config_module._config_instance = None
 
-        with patch.object(config_module, '_config_instance', None):
-            with patch.object(config_module, 'Config') as MockConfig:
+        with patch.object(config_module, "_config_instance", None):
+            with patch.object(config_module, "Config") as MockConfig:
                 mock_config = config_module.Config(AUTO_COMPLETE_PROJECTS=True)
                 MockConfig.return_value = mock_config
-                
-                with patch.object(config_module, 'get_config', return_value=mock_config):
+
+                with patch.object(config_module, "get_config", return_value=mock_config):
                     dependencies.get_event_bus()
 
                     # Create project
@@ -517,7 +522,9 @@ class TestAutoCompleteProject:
                         json={
                             "title": "Auto Complete Project",
                             "description": "Test project",
-                            "deadline": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+                            "deadline": (
+                                datetime.now(timezone.utc) + timedelta(days=30)
+                            ).isoformat(),
                         },
                     )
                     project_id = project_response.json()["id"]
@@ -528,7 +535,9 @@ class TestAutoCompleteProject:
                         json={
                             "title": "Task 1",
                             "description": "Description",
-                            "deadline": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                            "deadline": (
+                                datetime.now(timezone.utc) + timedelta(days=7)
+                            ).isoformat(),
                             "project_id": project_id,
                         },
                     )
@@ -537,7 +546,9 @@ class TestAutoCompleteProject:
                         json={
                             "title": "Task 2",
                             "description": "Description",
-                            "deadline": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                            "deadline": (
+                                datetime.now(timezone.utc) + timedelta(days=7)
+                            ).isoformat(),
                             "project_id": project_id,
                         },
                     )
@@ -547,7 +558,7 @@ class TestAutoCompleteProject:
 
                     # Complete task 1
                     client.patch(f"/tasks/{task1_id}/complete")
-                    
+
                     # Verify project is incomplete (1/2 tasks done)
                     project_response = client.get(f"/projects/{project_id}")
                     project = project_response.json()
@@ -565,16 +576,17 @@ class TestAutoCompleteProject:
                     project = project_response.json()
                     assert project["total_task_count"] == 1
                     assert project["completed_task_count"] == 1
-                    assert (
-                        project["completed"] is True
-                    ), "Project should be auto-completed when incomplete task is deleted and all remaining tasks are complete"
-        
+                    assert project["completed"] is True, (
+                        "Project should be auto-completed when incomplete task is "
+                        "deleted and all remaining tasks are complete"
+                    )
+
         # Cleanup
         dependencies._event_bus = None
         config_module._config_instance = None
 
     def test_unlink_incomplete_task_auto_completes_when_remaining_complete(self, client):
-        """Unlinking an incomplete task should auto-complete project if all remaining tasks are complete."""
+        """Unlinking incomplete task auto-completes project if all remaining tasks are complete."""
         from src.api import dependencies
         from src.infrastructure import config as config_module
 
@@ -582,12 +594,12 @@ class TestAutoCompleteProject:
         dependencies._event_bus = None
         config_module._config_instance = None
 
-        with patch.object(config_module, '_config_instance', None):
-            with patch.object(config_module, 'Config') as MockConfig:
+        with patch.object(config_module, "_config_instance", None):
+            with patch.object(config_module, "Config") as MockConfig:
                 mock_config = config_module.Config(AUTO_COMPLETE_PROJECTS=True)
                 MockConfig.return_value = mock_config
-                
-                with patch.object(config_module, 'get_config', return_value=mock_config):
+
+                with patch.object(config_module, "get_config", return_value=mock_config):
                     dependencies.get_event_bus()
 
                     # Create project
@@ -596,7 +608,9 @@ class TestAutoCompleteProject:
                         json={
                             "title": "Auto Complete Project",
                             "description": "Test project",
-                            "deadline": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+                            "deadline": (
+                                datetime.now(timezone.utc) + timedelta(days=30)
+                            ).isoformat(),
                         },
                     )
                     project_id = project_response.json()["id"]
@@ -607,7 +621,9 @@ class TestAutoCompleteProject:
                         json={
                             "title": "Task 1",
                             "description": "Description",
-                            "deadline": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                            "deadline": (
+                                datetime.now(timezone.utc) + timedelta(days=7)
+                            ).isoformat(),
                             "project_id": project_id,
                         },
                     )
@@ -616,7 +632,9 @@ class TestAutoCompleteProject:
                         json={
                             "title": "Task 2",
                             "description": "Description",
-                            "deadline": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                            "deadline": (
+                                datetime.now(timezone.utc) + timedelta(days=7)
+                            ).isoformat(),
                             "project_id": project_id,
                         },
                     )
@@ -626,7 +644,7 @@ class TestAutoCompleteProject:
 
                     # Complete task 1
                     client.patch(f"/tasks/{task1_id}/complete")
-                    
+
                     # Verify project is incomplete (1/2 tasks done)
                     project_response = client.get(f"/projects/{project_id}")
                     project = project_response.json()
@@ -644,10 +662,11 @@ class TestAutoCompleteProject:
                     project = project_response.json()
                     assert project["total_task_count"] == 1
                     assert project["completed_task_count"] == 1
-                    assert (
-                        project["completed"] is True
-                    ), "Project should be auto-completed when incomplete task is unlinked and all remaining tasks are complete"
-        
+                    assert project["completed"] is True, (
+                        "Project should be auto-completed when incomplete task is "
+                        "unlinked and all remaining tasks are complete"
+                    )
+
         # Cleanup
         dependencies._event_bus = None
         config_module._config_instance = None

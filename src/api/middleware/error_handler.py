@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from ...domain.exceptions import (
     DeadlineConstraintViolation,
     DomainException,
+    PastDateError,
     ProjectNotCompletableError,
     ProjectNotFoundError,
     TaskAlreadyCompletedError,
@@ -65,6 +66,18 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=400,
             content={
                 "error": "DeadlineConstraintViolation",
+                "message": str(exc),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    @app.exception_handler(PastDateError)
+    async def past_date_handler(request: Request, exc: PastDateError):
+        """Handle PastDateError."""
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "PastDateError",
                 "message": str(exc),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             },

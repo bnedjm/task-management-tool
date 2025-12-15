@@ -71,26 +71,40 @@ class SQLAlchemyTaskRepository(TaskRepository):
     def list_by_filter(
         self,
         completed: Optional[bool] = None,
-        overdue: bool = False,
+        overdue: Optional[bool] = None,
+        project_id: Optional[ProjectId] = None,
     ) -> List[Task]:
         """Retrieve tasks matching filter criteria.
 
         Args:
             completed: Filter by completion status (None for all).
-            overdue: Filter for overdue tasks only.
+            overdue: Filter for overdue tasks (None for all, True for overdue,
+                False for not overdue).
+            project_id: Filter by project ID (None for all projects).
 
         Returns:
             List[Task]: List of tasks matching the criteria.
         """
         query = self._session.query(TaskModel)
 
+        if project_id is not None:
+            query = query.filter_by(project_id=str(project_id))
+
         if completed is not None:
             query = query.filter_by(completed=completed)
 
-        if overdue:
-            query = query.filter(
-                TaskModel.completed is False, TaskModel.deadline < datetime.now(timezone.utc)
-            )
+        if overdue is not None:
+            if overdue:
+                # Filter for overdue tasks: not completed and deadline in the past
+                query = query.filter(
+                    TaskModel.completed.is_(False), TaskModel.deadline < datetime.now(timezone.utc)
+                )
+            else:
+                # Filter for not overdue tasks: either completed or deadline in the future
+                query = query.filter(
+                    (TaskModel.completed.is_(True))
+                    | (TaskModel.deadline >= datetime.now(timezone.utc))
+                )
 
         orm_models = query.all()
         return [self._to_domain(model) for model in orm_models]
@@ -132,7 +146,7 @@ class SQLAlchemyTaskRepository(TaskRepository):
             id=TaskId.from_string(orm_model.id),
             title=orm_model.title,
             description=orm_model.description,
-            deadline=Deadline(orm_model.deadline),
+            deadline=Deadline.from_datetime(orm_model.deadline, validate_past=False),
             completed=orm_model.completed,
             project_id=project_id,
         )

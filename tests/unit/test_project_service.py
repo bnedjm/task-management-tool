@@ -22,7 +22,7 @@ from src.application.queries.project_queries import GetProjectByIdQuery, ListPro
 from src.application.services.project_service import ProjectService
 from src.domain.entities.project import Project
 from src.domain.entities.task import Task
-from src.domain.events.project_events import ProjectCompletedEvent, ProjectCreatedEvent
+from src.domain.events.project_events import ProjectCreatedEvent
 from src.domain.exceptions.project_exceptions import (
     DeadlineConstraintViolation,
     ProjectNotCompletableError,
@@ -110,7 +110,9 @@ class TestUpdateProject:
         )
         mock_uow.tasks.list_by_project.return_value = []
 
-        command = UpdateProjectCommand(project_id=str(project_id), title="Updated", description=None)
+        command = UpdateProjectCommand(
+            project_id=str(project_id), title="Updated", description=None
+        )
 
         result = project_service.update_project(command)
 
@@ -246,9 +248,7 @@ class TestCompleteProject:
 class TestDeleteProject:
     """Test project deletion orchestration."""
 
-    def test_delete_project_without_tasks_succeeds(
-        self, project_service, mock_uow, mock_event_bus
-    ):
+    def test_delete_project_without_tasks_succeeds(self, project_service, mock_uow, mock_event_bus):
         """Deleting project without tasks works."""
         project_id = ProjectId.generate()
         project = Project(
@@ -497,9 +497,7 @@ class TestQueryProjects:
         assert result.id == str(project_id)
         assert result.title == "Project"
 
-    def test_get_nonexistent_project_raises_error(
-        self, project_service, mock_uow, mock_event_bus
-    ):
+    def test_get_nonexistent_project_raises_error(self, project_service, mock_uow, mock_event_bus):
         """Getting non-existent project raises error."""
         mock_uow.projects.get_by_id.return_value = None
 
@@ -602,4 +600,3 @@ class TestTransactionManagement:
 
         # Events should have been published
         assert mock_event_bus.publish.called
-

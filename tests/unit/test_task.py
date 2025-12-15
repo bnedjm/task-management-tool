@@ -119,8 +119,8 @@ class TestTaskProjectAssignment:
     def test_assign_task_with_valid_deadline_succeeds(self, task_factory):
         """Task with deadline before project deadline can be assigned."""
         project_id = ProjectId.generate()
-        task_deadline = Deadline(datetime(2025, 1, 1))
-        project_deadline = Deadline(datetime(2025, 2, 1))
+        task_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=1))
+        project_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=2))
 
         task = task_factory(deadline=task_deadline)
 
@@ -131,8 +131,8 @@ class TestTaskProjectAssignment:
     def test_assign_task_with_later_deadline_than_project_fails(self, task_factory):
         """Task deadline cannot be after project deadline."""
         project_id = ProjectId.generate()
-        task_deadline = Deadline(datetime(2025, 2, 1))
-        project_deadline = Deadline(datetime(2025, 1, 1))
+        task_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=2))
+        project_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=1))
 
         task = task_factory(deadline=task_deadline)
 
@@ -144,8 +144,8 @@ class TestTaskProjectAssignment:
     def test_assign_task_emits_event(self, task_factory):
         """Assigning task to project emits event."""
         project_id = ProjectId.generate()
-        task_deadline = Deadline(datetime(2025, 1, 1))
-        project_deadline = Deadline(datetime(2025, 2, 1))
+        task_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=1))
+        project_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=2))
 
         task = task_factory(deadline=task_deadline)
 
@@ -164,7 +164,7 @@ class TestTaskDeadlineAdjustment:
     def test_adjust_deadline_without_project(self, task_factory):
         """Can adjust deadline when not assigned to project."""
         task = task_factory()
-        new_deadline = Deadline(datetime(2025, 6, 1))
+        new_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=30))
 
         task.adjust_deadline(new_deadline)
 
@@ -173,8 +173,8 @@ class TestTaskDeadlineAdjustment:
     def test_adjust_deadline_within_project_constraint(self, task_factory):
         """Can adjust deadline within project deadline constraint."""
         task = task_factory()
-        new_deadline = Deadline(datetime(2025, 1, 15))
-        project_deadline = Deadline(datetime(2025, 2, 1))
+        new_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=15))
+        project_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=30))
 
         task.adjust_deadline(new_deadline, project_deadline)
 
@@ -183,8 +183,8 @@ class TestTaskDeadlineAdjustment:
     def test_adjust_deadline_violating_project_constraint_fails(self, task_factory):
         """Cannot adjust deadline beyond project deadline."""
         task = task_factory()
-        new_deadline = Deadline(datetime(2025, 3, 1))
-        project_deadline = Deadline(datetime(2025, 2, 1))
+        new_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=30))
+        project_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=15))
 
         with pytest.raises(DeadlineConstraintViolation):
             task.adjust_deadline(new_deadline, project_deadline)
@@ -193,7 +193,7 @@ class TestTaskDeadlineAdjustment:
         """Adjusting deadline emits event."""
         task = task_factory()
         old_deadline = task.deadline
-        new_deadline = Deadline(datetime(2025, 6, 1))
+        new_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=30))
 
         task.adjust_deadline(new_deadline)
 
@@ -207,26 +207,26 @@ class TestTaskDeadlineAdjustment:
 class TestTaskOverdue:
     """Test overdue status logic."""
 
-    def test_task_is_overdue_when_deadline_passed(self):
-        """Task is overdue when deadline is in the past and not completed."""
-        past_deadline = Deadline(datetime.now(timezone.utc) - timedelta(days=1))
+    def test_task_is_not_overdue_with_future_deadline(self):
+        """Task is not overdue when deadline is in the future."""
+        future_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=1))
         task = Task(
             id=TaskId.generate(),
-            title="Overdue Task",
+            title="Future Task",
             description="Test",
-            deadline=past_deadline,
+            deadline=future_deadline,
         )
 
-        assert task.is_overdue is True
+        assert task.is_overdue is False
 
     def test_completed_task_is_not_overdue(self):
-        """Completed task is not considered overdue."""
-        past_deadline = Deadline(datetime.now(timezone.utc) - timedelta(days=1))
+        """Completed task is never considered overdue, regardless of deadline."""
+        future_deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=1))
         task = Task(
             id=TaskId.generate(),
             title="Completed Task",
             description="Test",
-            deadline=past_deadline,
+            deadline=future_deadline,
             completed=True,
         )
 

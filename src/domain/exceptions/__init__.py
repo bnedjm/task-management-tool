@@ -3,6 +3,7 @@
 from .base import DomainException
 from .project_exceptions import (
     DeadlineConstraintViolation,
+    PastDateError,
     ProjectNotCompletableError,
     ProjectNotFoundError,
 )
@@ -13,6 +14,7 @@ __all__ = [
     "TaskAlreadyCompletedError",
     "TaskNotFoundError",
     "DeadlineConstraintViolation",
+    "PastDateError",
     "ProjectNotCompletableError",
     "ProjectNotFoundError",
 ]

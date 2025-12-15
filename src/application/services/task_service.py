@@ -292,14 +292,15 @@ class TaskService:
             List[TaskDTO]: List of task data.
         """
         with self._uow:
+            project_id = None
             if query.project_id:
                 project_id = ProjectId.from_string(query.project_id)
-                tasks = self._uow.tasks.list_by_project(project_id)
-            else:
-                tasks = self._uow.tasks.list_by_filter(
-                    completed=query.completed,
-                    overdue=query.overdue,
-                )
+
+            tasks = self._uow.tasks.list_by_filter(
+                completed=query.completed,
+                overdue=query.overdue,
+                project_id=project_id,
+            )
             return [self._to_dto(task) for task in tasks]
 
     def _to_dto(self, task: Task) -> TaskDTO:

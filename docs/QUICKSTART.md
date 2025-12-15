@@ -62,7 +62,7 @@ The automated setup script handles everything for you.
 ```bash
 # 1. Clone the repository
 git clone <repository-url>
-cd payback-task-management-tool
+cd task-management-tool
 
 # 2. Run the setup script
 ./setup.sh
@@ -92,7 +92,7 @@ Docker provides the fastest way to run the application without any local setup.
 ```bash
 # 1. Clone the repository
 git clone <repository-url>
-cd payback-task-management-tool
+cd task-management-tool
 
 # 2. Configure environment
 cp env.template .env
@@ -118,7 +118,7 @@ If you prefer a manual setup or the automated script doesn't work:
 ```bash
 # 1. Clone the repository
 git clone <repository-url>
-cd payback-task-management-tool
+cd task-management-tool
 
 # 2. Create virtual environment
 python3 -m venv venv
@@ -159,8 +159,7 @@ curl http://localhost:8000/health
 **Expected response:**
 ```json
 {
-  "status": "healthy",
-  "version": "1.0.0"
+  "status": "healthy"
 }
 ```
 
@@ -212,8 +211,10 @@ curl -X POST "http://localhost:8000/projects" \
   "description": "Learning the Task Management System",
   "deadline": "2025-12-31T23:59:59",
   "completed": false,
-  "total_tasks": 0,
-  "completed_tasks": 0
+  "total_task_count": 0,
+  "completed_task_count": 0,
+  "created_at": "2025-12-15T10:00:00",
+  "updated_at": "2025-12-15T10:00:00"
 }
 ```
 
@@ -243,7 +244,9 @@ curl -X POST "http://localhost:8000/tasks" \
   "deadline": "2025-12-20T18:00:00",
   "completed": false,
   "project_id": "<PROJECT_ID>",
-  "is_overdue": false
+  "is_overdue": false,
+  "created_at": "2025-12-15T10:00:00",
+  "updated_at": "2025-12-15T10:00:00"
 }
 ```
 
@@ -301,14 +304,30 @@ The easiest way to explore the API is through the **Swagger UI**:
 curl "http://localhost:8000/tasks?completed=true"
 ```
 
+**Get incomplete tasks:**
+```bash
+curl "http://localhost:8000/tasks?completed=false"
+```
+
 **Get overdue tasks:**
 ```bash
 curl "http://localhost:8000/tasks?overdue=true"
 ```
 
+**Get tasks that are not overdue:**
+```bash
+curl "http://localhost:8000/tasks?overdue=false"
+```
+
 **Get tasks for a specific project:**
 ```bash
 curl "http://localhost:8000/tasks?project_id=<PROJECT_ID>"
+```
+
+**Combine multiple filters** (all filters work together):
+```bash
+# Get completed, non-overdue tasks for a specific project
+curl "http://localhost:8000/tasks?completed=true&overdue=false&project_id=<PROJECT_ID>"
 ```
 
 ### Update Operations

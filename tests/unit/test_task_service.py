@@ -6,7 +6,7 @@ fast, isolated unit tests.
 """
 
 from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -21,15 +21,12 @@ from src.application.queries.task_queries import GetTaskByIdQuery, ListTasksQuer
 from src.application.services.task_service import TaskService
 from src.domain.entities.project import Project
 from src.domain.entities.task import Task
-from src.domain.events.task_events import TaskCompletedEvent, TaskCreatedEvent
+from src.domain.events.task_events import TaskCreatedEvent
 from src.domain.exceptions.project_exceptions import (
     DeadlineConstraintViolation,
     ProjectNotFoundError,
 )
-from src.domain.exceptions.task_exceptions import (
-    TaskAlreadyCompletedError,
-    TaskNotFoundError,
-)
+from src.domain.exceptions.task_exceptions import TaskAlreadyCompletedError, TaskNotFoundError
 from src.domain.value_objects.deadline import Deadline
 from src.domain.value_objects.ids import ProjectId, TaskId
 
@@ -353,9 +350,7 @@ class TestReopenTask:
         assert mock_uow.commit.called
         assert mock_event_bus.publish.called
 
-    def test_reopen_task_with_project_reopens_project(
-        self, task_service, mock_uow, mock_event_bus
-    ):
+    def test_reopen_task_with_project_reopens_project(self, task_service, mock_uow, mock_event_bus):
         """Reopening a task can reopen a completed project."""
         task_id = TaskId.generate()
         project_id = ProjectId.generate()
@@ -514,7 +509,9 @@ class TestQueryTasks:
         result = task_service.list_tasks(query)
 
         assert len(result) == 3
-        mock_uow.tasks.list_by_filter.assert_called_once_with(completed=None, overdue=None)
+        mock_uow.tasks.list_by_filter.assert_called_once_with(
+            completed=None, overdue=None, project_id=None
+        )
 
     def test_list_tasks_by_project(self, task_service, mock_uow, mock_event_bus):
         """Listing tasks by project uses correct repository method."""
@@ -528,7 +525,7 @@ class TestQueryTasks:
                 project_id=project_id,
             )
         ]
-        mock_uow.tasks.list_by_project.return_value = tasks
+        mock_uow.tasks.list_by_filter.return_value = tasks
         mock_uow.tasks.get_timestamps.return_value = (
             datetime.now(timezone.utc),
             datetime.now(timezone.utc),
@@ -539,7 +536,9 @@ class TestQueryTasks:
         result = task_service.list_tasks(query)
 
         assert len(result) == 1
-        mock_uow.tasks.list_by_project.assert_called_once()
+        mock_uow.tasks.list_by_filter.assert_called_once_with(
+            completed=None, overdue=None, project_id=project_id
+        )
 
 
 class TestTransactionManagement:
@@ -588,4 +587,3 @@ class TestTransactionManagement:
 
         # Events should have been published
         assert mock_event_bus.publish.called
-

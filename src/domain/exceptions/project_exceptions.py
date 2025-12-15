@@ -46,3 +46,16 @@ class ProjectNotCompletableError(DomainException):
         super().__init__(
             f"Cannot complete project '{project_id}': " f"{incomplete_count} task(s) still pending"
         )
+
+
+class PastDateError(DomainException):
+    """Raised when attempting to set a deadline in the past."""
+
+    def __init__(self, deadline: str):
+        """Initialize the exception.
+
+        Args:
+            deadline: The deadline that was in the past.
+        """
+        self.deadline = deadline
+        super().__init__(f"Deadline cannot be in the past: {deadline}")

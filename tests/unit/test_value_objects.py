@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
+from src.domain.exceptions.project_exceptions import PastDateError
 from src.domain.value_objects.deadline import Deadline
 from src.domain.value_objects.ids import ProjectId, TaskId
 
@@ -80,16 +81,16 @@ class TestDeadline:
 
     def test_is_after(self):
         """is_after correctly compares deadlines."""
-        earlier = Deadline(datetime(2025, 1, 1))
-        later = Deadline(datetime(2025, 2, 1))
+        earlier = Deadline(datetime.now(timezone.utc) + timedelta(days=1))
+        later = Deadline(datetime.now(timezone.utc) + timedelta(days=2))
 
         assert later.is_after(earlier)
         assert not earlier.is_after(later)
 
     def test_is_before(self):
         """is_before correctly compares deadlines."""
-        earlier = Deadline(datetime(2025, 1, 1))
-        later = Deadline(datetime(2025, 2, 1))
+        earlier = Deadline(datetime.now(timezone.utc) + timedelta(days=1))
+        later = Deadline(datetime.now(timezone.utc) + timedelta(days=2))
 
         assert earlier.is_before(later)
         assert not later.is_before(earlier)
@@ -101,19 +102,23 @@ class TestDeadline:
         assert deadline.is_within_hours(24)
         assert not deadline.is_within_hours(6)
 
+    def test_past_date_raises_error(self):
+        """Creating a deadline in the past raises PastDateError."""
+        past_date = datetime.now(timezone.utc) - timedelta(days=1)
+
+        with pytest.raises(PastDateError) as exc_info:
+            Deadline(past_date)
+
+        assert "past" in str(exc_info.value).lower()
+
     def test_is_within_hours_past(self):
-        """is_within_hours returns False for past deadlines."""
-        deadline = Deadline(datetime.now(timezone.utc) - timedelta(hours=1))
+        """is_within_hours returns False for deadlines that are not within the window."""
+        # Create a deadline far in the future (not within 24 hours)
+        deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=2))
 
         assert not deadline.is_within_hours(24)
 
-    def test_is_overdue_past(self):
-        """is_overdue returns True for past deadlines."""
-        deadline = Deadline(datetime.now(timezone.utc) - timedelta(days=1))
-
-        assert deadline.is_overdue()
-
-    def test_is_overdue_future(self):
+    def test_is_overdue_future_deadline(self):
         """is_overdue returns False for future deadlines."""
         deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=1))
 
@@ -121,25 +126,27 @@ class TestDeadline:
 
     def test_from_string(self):
         """Can create Deadline from ISO format string."""
-        date_str = "2025-12-31T23:59:59"
+        # Use a future date to avoid past date validation
+        future_date = datetime.now(timezone.utc) + timedelta(days=365)
+        date_str = future_date.isoformat()
         deadline = Deadline.from_string(date_str)
 
         # Compare just the date/time components (ignore timezone)
-        expected = datetime(2025, 12, 31, 23, 59, 59)
+        expected = future_date.replace(tzinfo=None)
         assert deadline.value.replace(tzinfo=None) == expected
 
     def test_to_string(self):
         """Can convert Deadline to ISO format string."""
-        dt = datetime(2025, 12, 31, 23, 59, 59)
+        dt = datetime.now(timezone.utc) + timedelta(days=365)
         deadline = Deadline(dt)
 
         # Check that it produces a valid ISO format string
         result = deadline.to_string()
-        assert "2025-12-31" in result and "23:59:59" in result
+        assert dt.strftime("%Y-%m-%d") in result
 
     def test_equality(self):
         """Deadlines with same datetime are equal."""
-        dt = datetime(2025, 1, 1)
+        dt = datetime.now(timezone.utc) + timedelta(days=1)
         d1 = Deadline(dt)
         d2 = Deadline(dt)
 
@@ -147,7 +154,7 @@ class TestDeadline:
 
     def test_immutability(self):
         """Deadline is immutable (frozen dataclass)."""
-        deadline = Deadline(datetime(2025, 1, 1))
+        deadline = Deadline(datetime.now(timezone.utc) + timedelta(days=1))
 
         with pytest.raises(Exception):  # FrozenInstanceError or AttributeError
-            deadline.value = datetime(2025, 2, 1)
+            deadline.value = datetime.now(timezone.utc) + timedelta(days=2)

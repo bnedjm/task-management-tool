@@ -32,11 +32,11 @@ This Task Management System is a **production-ready application** built to demon
 
 ### Technology Stack
 
-- **Backend Framework:** FastAPI 0.104+
+- **Backend Framework:** FastAPI 0.115+
 - **Language:** Python 3.11+
 - **Database:** PostgreSQL (Neon) / SQLite
 - **ORM:** SQLAlchemy 2.0
-- **Validation:** Pydantic 2.5
+- **Validation:** Pydantic 2.9
 - **Testing:** Pytest
 - **Containerization:** Docker & Docker Compose
 
@@ -152,7 +152,7 @@ This system implements **Hexagonal Architecture** (Ports & Adapters) with **Doma
 ### Project Structure
 
 ```
-payback-task-management-tool/
+task-management-tool/
 ├── src/
 │   ├── domain/              # Core business logic (NO dependencies)
 │   │   ├── entities/        # Task, Project (rich domain models)
@@ -221,7 +221,7 @@ The easiest way to get started. Run the automated setup script:
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd payback-task-management-tool
+cd task-management-tool
 
 # Run the setup script
 ./setup.sh
@@ -247,7 +247,7 @@ Perfect for quick deployment or production-like environment:
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd payback-task-management-tool
+cd task-management-tool
 
 # Configure environment
 cp env.template .env
@@ -272,7 +272,7 @@ For developers who want full control:
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd payback-task-management-tool
+cd task-management-tool
 
 # Create virtual environment
 python3 -m venv venv
@@ -435,8 +435,8 @@ curl -X POST "http://localhost:8000/projects" \
   "description": "Complete redesign of company website",
   "deadline": "2025-12-31T23:59:59",
   "completed": false,
-  "total_tasks": 0,
-  "completed_tasks": 0
+  "total_task_count": 0,
+  "completed_task_count": 0
 }
 ```
 
@@ -554,8 +554,8 @@ nano .env
 
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
-| `DEV_DATABASE_URL` | Development database connection | `sqlite:///./tasks.db` | `postgresql://user:pass@host.neon.tech/db` |
-| `PROD_DATABASE_URL` | Production database connection | `sqlite:///./tasks.db` | `postgresql://user:pass@host:5432/db` |
+| `DEV_DATABASE_URL` | Development database connection | `sqlite:///./data/tasks.db` | `postgresql://user:pass@host.neon.tech/db` |
+| `PROD_DATABASE_URL` | Production database connection | `sqlite:///./data/tasks.db` | `postgresql://user:pass@host:5432/db` |
 | `AUTO_COMPLETE_PROJECTS` | Auto-complete projects when all tasks done | `true` | `true` or `false` |
 | `LOG_LEVEL` | Logging verbosity | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 | `API_TITLE` | API title in documentation | `Task Management API` | Any string |
@@ -649,7 +649,9 @@ GET    /projects/{id}         # Get a specific project
 PUT    /projects/{id}         # Update a project
 DELETE /projects/{id}         # Delete a project
 PATCH  /projects/{id}/complete # Complete a project
-PATCH  /projects/{id}/reopen   # Reopen a project
+POST   /projects/{id}/tasks/{task_id}/link   # Link task to project
+DELETE /projects/{id}/tasks/{task_id}/unlink # Unlink task from project
+GET    /projects/{id}/tasks   # Get all tasks for a project
 ```
 
 #### Tasks
@@ -992,7 +994,7 @@ ssh -i key.pem ubuntu@ec2-xxx.compute.amazonaws.com
 
 # Clone and setup
 git clone <repository-url>
-cd payback-task-management-tool
+cd task-management-tool
 ./setup.sh
 
 # Run with supervisor/systemd
@@ -1014,8 +1016,8 @@ We welcome contributions! This project is a demonstration of best practices, and
 1. **Fork the repository**
 2. **Clone your fork**
    ```bash
-   git clone https://github.com/your-username/payback-task-management-tool.git
-   cd payback-task-management-tool
+   git clone https://github.com/your-username/task-management-tool.git
+   cd task-management-tool
    ```
 3. **Set up development environment**
    ```bash

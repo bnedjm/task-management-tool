@@ -60,7 +60,8 @@ def get_event_bus() -> EventBus:
         # Get initial config for logging
         initial_config = get_config()
         logger.info(
-            f"⚙️  Configuration loaded: AUTO_COMPLETE_PROJECTS={initial_config.AUTO_COMPLETE_PROJECTS}"
+            f"⚙️  Configuration loaded: "
+            f"AUTO_COMPLETE_PROJECTS={initial_config.AUTO_COMPLETE_PROJECTS}"
         )
 
         # Register handlers that don't need repositories
@@ -159,7 +160,7 @@ def get_event_bus() -> EventBus:
 
         _event_bus.register(TaskCompletedEvent, auto_complete_handler)
         logger.info("✅ Registered AutoCompleteProjectHandler for TaskCompletedEvent")
-        
+
         # Register handler for task removal events
         def task_removed_handler(event: TaskRemovedFromProjectEvent):
             """Wrapper to handle auto-completion after task removal."""
@@ -192,7 +193,7 @@ def get_event_bus() -> EventBus:
 
         _event_bus.register(TaskRemovedFromProjectEvent, task_removed_handler)
         logger.info("✅ Registered AutoCompleteProjectHandler for TaskRemovedFromProjectEvent")
-        
+
         _event_bus.register(ProjectDeadlineChangedEvent, deadline_adjustment_handler)
         logger.info("✅ Registered TaskDeadlineAdjustmentHandler")
         logger.info("🎉 Event Bus initialization complete!")

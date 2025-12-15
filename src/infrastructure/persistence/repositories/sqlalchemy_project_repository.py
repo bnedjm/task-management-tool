@@ -109,7 +109,7 @@ class SQLAlchemyProjectRepository(ProjectRepository):
             id=ProjectId.from_string(orm_model.id),
             title=orm_model.title,
             description=orm_model.description,
-            deadline=Deadline(orm_model.deadline),
+            deadline=Deadline.from_datetime(orm_model.deadline, validate_past=False),
             completed=orm_model.completed,
         )
 

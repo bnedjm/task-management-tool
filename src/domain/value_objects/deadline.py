@@ -16,10 +16,17 @@ class Deadline:
     value: datetime
 
     def __post_init__(self):
-        """Ensure the datetime is timezone-aware (UTC)."""
+        """Ensure the datetime is timezone-aware (UTC) and validate it's not in the past."""
         if self.value.tzinfo is None:
             # If naive datetime, assume UTC and make it aware
             object.__setattr__(self, "value", self.value.replace(tzinfo=timezone.utc))
+
+        # Validate that the deadline is not in the past
+        now = datetime.now(timezone.utc)
+        if self.value < now:
+            from ..exceptions.project_exceptions import PastDateError
+
+            raise PastDateError(self.value.isoformat())
 
     def is_after(self, other: "Deadline") -> bool:
         """Check if this deadline is after another deadline.
@@ -74,6 +81,36 @@ class Deadline:
             Deadline: Deadline instance.
         """
         return cls(value=datetime.fromisoformat(date_str))
+
+    @classmethod
+    def from_datetime(cls, dt: datetime, validate_past: bool = True) -> "Deadline":
+        """Create Deadline from datetime, optionally skipping past date validation.
+
+        This method is useful when loading deadlines from persistence where
+        past dates may exist in the database.
+
+        Args:
+            dt: Datetime value for the deadline.
+            validate_past: If False, skip past date validation (default: True).
+
+        Returns:
+            Deadline: Deadline instance.
+        """
+        instance = cls.__new__(cls)
+        # Set the value directly without going through __post_init__ validation
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        object.__setattr__(instance, "value", dt)
+
+        # Only validate if requested
+        if validate_past:
+            now = datetime.now(timezone.utc)
+            if instance.value < now:
+                from ..exceptions.project_exceptions import PastDateError
+
+                raise PastDateError(instance.value.isoformat())
+
+        return instance
 
     def to_string(self) -> str:
         """Convert deadline to ISO format string.
