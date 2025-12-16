@@ -66,13 +66,24 @@ class SQLAlchemyProjectRepository(ProjectRepository):
         Returns:
             List[Project]: List of projects matching the criteria.
         """
-        query = self._session.query(ProjectModel)
-
-        if completed is not None:
-            query = query.filter_by(completed=completed)
-
-        orm_models = query.all()
+        query = self._build_filtered_query(completed)
+        orm_models = query.order_by(ProjectModel.created_at.desc(), ProjectModel.id.desc()).all()
         return [self._to_domain(model) for model in orm_models]
+
+    def list_by_filter_paginated(
+        self, completed: Optional[bool], offset: int, limit: int
+    ) -> tuple[List[Project], int]:
+        """Retrieve projects with pagination and total count."""
+        base_query = self._build_filtered_query(completed)
+        total = base_query.count()
+
+        paged_query = (
+            base_query.order_by(ProjectModel.created_at.desc(), ProjectModel.id.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        orm_models = paged_query.all()
+        return [self._to_domain(model) for model in orm_models], total
 
     def delete(self, project_id: ProjectId) -> None:
         """Delete a project.
@@ -141,3 +152,12 @@ class SQLAlchemyProjectRepository(ProjectRepository):
             deadline=project.deadline.value,
             completed=project.is_completed,
         )
+
+    def _build_filtered_query(self, completed: Optional[bool]):
+        """Create a SQLAlchemy query with common project filters applied."""
+        query = self._session.query(ProjectModel)
+
+        if completed is not None:
+            query = query.filter_by(completed=completed)
+
+        return query

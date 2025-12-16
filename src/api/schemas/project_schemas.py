@@ -1,7 +1,7 @@
 """Pydantic schemas for project API endpoints."""
 
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -68,6 +68,40 @@ class ProjectResponse(BaseModel):
                 "completed_task_count": 3,
                 "created_at": "2025-11-01T09:00:00",
                 "updated_at": "2025-12-10T14:20:00",
+            }
+        }
+    }
+
+
+class PaginatedProjectsResponse(BaseModel):
+    """Paginated response schema for projects."""
+
+    items: List[ProjectResponse] = Field(..., description="List of projects in the current page")
+    total: int = Field(..., description="Total number of projects matching filters")
+    offset: int = Field(..., description="Zero-based offset of the current page")
+    limit: int = Field(..., description="Maximum items per page")
+    has_more: bool = Field(..., description="Whether more items are available")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "items": [
+                    {
+                        "id": "660e8400-e29b-41d4-a716-446655440000",
+                        "title": "API Development Phase 1",
+                        "description": "Develop core API endpoints and authentication",
+                        "deadline": "2025-12-31T23:59:59",
+                        "completed": False,
+                        "total_task_count": 5,
+                        "completed_task_count": 3,
+                        "created_at": "2025-11-01T09:00:00",
+                        "updated_at": "2025-12-10T14:20:00",
+                    }
+                ],
+                "total": 10,
+                "offset": 0,
+                "limit": 20,
+                "has_more": True,
             }
         }
     }

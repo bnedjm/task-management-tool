@@ -18,3 +18,5 @@ class ListTasksQuery:
     completed: Optional[bool] = None
     overdue: Optional[bool] = None
     project_id: Optional[str] = None
+    offset: int = 0
+    limit: int = 20

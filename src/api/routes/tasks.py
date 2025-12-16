@@ -1,8 +1,8 @@
 """Task API endpoints."""
 
-from typing import List, Optional
+from typing import Optional
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from ...application.commands.task_commands import (
     CompleteTaskCommand,
@@ -14,7 +14,12 @@ from ...application.commands.task_commands import (
 from ...application.dto.task_dto import TaskDTO
 from ...application.queries.task_queries import GetTaskByIdQuery, ListTasksQuery
 from ..dependencies import get_task_service
-from ..schemas.task_schemas import TaskCreateRequest, TaskResponse, TaskUpdateRequest
+from ..schemas.task_schemas import (
+    PaginatedTasksResponse,
+    TaskCreateRequest,
+    TaskResponse,
+    TaskUpdateRequest,
+)
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
@@ -81,7 +86,7 @@ def create_task(request: TaskCreateRequest) -> TaskResponse:
 
 @router.get(
     "",
-    response_model=List[TaskResponse],
+    response_model=PaginatedTasksResponse,
     summary="List tasks",
     description="List all tasks with optional filters for completion status, overdue, and project.",
 )
@@ -89,7 +94,9 @@ def list_tasks(
     completed: Optional[bool] = None,
     overdue: Optional[bool] = None,
     project_id: Optional[str] = None,
-) -> List[TaskResponse]:
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(20, gt=0, le=100, description="Maximum items per page"),
+) -> PaginatedTasksResponse:
     """List tasks with optional filters.
 
     Args:
@@ -107,9 +114,17 @@ def list_tasks(
         completed=completed,
         overdue=overdue,
         project_id=project_id,
+        offset=offset,
+        limit=limit,
     )
-    tasks = task_service.list_tasks(query)
-    return [_dto_to_response(task) for task in tasks]
+    result = task_service.list_tasks(query)
+    return PaginatedTasksResponse(
+        items=[_dto_to_response(task) for task in result.items],
+        total=result.total,
+        offset=result.offset,
+        limit=result.limit,
+        has_more=result.has_more,
+    )
 
 
 @router.get(

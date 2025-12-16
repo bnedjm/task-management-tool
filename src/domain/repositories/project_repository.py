@@ -57,6 +57,13 @@ class ProjectRepository(ABC):
         pass
 
     @abstractmethod
+    def list_by_filter_paginated(
+        self, completed: Optional[bool], offset: int, limit: int
+    ) -> tuple[List[Project], int]:
+        """Retrieve projects with pagination and total count."""
+        pass
+
+    @abstractmethod
     def delete(self, project_id: ProjectId) -> None:
         """Delete a project.
 

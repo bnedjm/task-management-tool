@@ -1,8 +1,8 @@
 """Project API endpoints."""
 
-from typing import List, Optional
+from typing import Optional
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from ...application.commands.project_commands import (
     CompleteProjectCommand,
@@ -17,8 +17,13 @@ from ...application.dto.task_dto import TaskDTO
 from ...application.queries.project_queries import GetProjectByIdQuery, ListProjectsQuery
 from ...application.queries.task_queries import ListTasksQuery
 from ..dependencies import get_project_service, get_task_service
-from ..schemas.project_schemas import ProjectCreateRequest, ProjectResponse, ProjectUpdateRequest
-from ..schemas.task_schemas import TaskResponse
+from ..schemas.project_schemas import (
+    PaginatedProjectsResponse,
+    ProjectCreateRequest,
+    ProjectResponse,
+    ProjectUpdateRequest,
+)
+from ..schemas.task_schemas import PaginatedTasksResponse, TaskResponse
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
@@ -77,11 +82,15 @@ def create_project(request: ProjectCreateRequest) -> ProjectResponse:
 
 @router.get(
     "",
-    response_model=List[ProjectResponse],
+    response_model=PaginatedProjectsResponse,
     summary="List projects",
     description="List all projects with optional filter for completion status.",
 )
-def list_projects(completed: Optional[bool] = None) -> List[ProjectResponse]:
+def list_projects(
+    completed: Optional[bool] = None,
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(20, gt=0, le=100, description="Maximum items per page"),
+) -> PaginatedProjectsResponse:
     """List projects with optional filters.
 
     Args:
@@ -91,9 +100,15 @@ def list_projects(completed: Optional[bool] = None) -> List[ProjectResponse]:
         List[ProjectResponse]: List of projects matching criteria.
     """
     project_service = get_project_service()
-    query = ListProjectsQuery(completed=completed)
-    projects = project_service.list_projects(query)
-    return [_dto_to_response(project) for project in projects]
+    query = ListProjectsQuery(completed=completed, offset=offset, limit=limit)
+    result = project_service.list_projects(query)
+    return PaginatedProjectsResponse(
+        items=[_dto_to_response(project) for project in result.items],
+        total=result.total,
+        offset=result.offset,
+        limit=result.limit,
+        has_more=result.has_more,
+    )
 
 
 @router.get(
@@ -242,11 +257,15 @@ def unlink_task_from_project(project_id: str, task_id: str) -> None:
 
 @router.get(
     "/{project_id}/tasks",
-    response_model=List[TaskResponse],
+    response_model=PaginatedTasksResponse,
     summary="Get project tasks",
     description="Retrieve all tasks associated with a specific project.",
 )
-def get_project_tasks(project_id: str) -> List[TaskResponse]:
+def get_project_tasks(
+    project_id: str,
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(20, gt=0, le=100, description="Maximum items per page"),
+) -> PaginatedTasksResponse:
     """Get all tasks for a project.
 
     Args:
@@ -270,11 +289,23 @@ def get_project_tasks(project_id: str) -> List[TaskResponse]:
 
     # Get tasks for project
     task_service = get_task_service()
-    query_tasks = ListTasksQuery(project_id=project_id, completed=None, overdue=False)
-    tasks = task_service.list_tasks(query_tasks)
+    query_tasks = ListTasksQuery(
+        project_id=project_id,
+        completed=None,
+        overdue=False,
+        offset=offset,
+        limit=limit,
+    )
+    result = task_service.list_tasks(query_tasks)
 
     # Convert DTOs to responses
-    return [_dto_to_task_response(task) for task in tasks]
+    return PaginatedTasksResponse(
+        items=[_dto_to_task_response(task) for task in result.items],
+        total=result.total,
+        offset=result.offset,
+        limit=result.limit,
+        has_more=result.has_more,
+    )
 
 
 def _dto_to_task_response(dto: TaskDTO) -> TaskResponse:

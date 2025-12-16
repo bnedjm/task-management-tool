@@ -16,3 +16,5 @@ class ListProjectsQuery:
     """Query to list projects with optional filters."""
 
     completed: Optional[bool] = None
+    offset: int = 0
+    limit: int = 20

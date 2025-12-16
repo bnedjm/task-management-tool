@@ -672,6 +672,16 @@ PATCH  /tasks/{id}/reopen     # Reopen a task
 - `completed` (boolean) - Filter by completion status
 - `overdue` (boolean) - Filter overdue tasks
 - `project_id` (string) - Filter by project
+- `offset` (int, default 0) - Zero-based offset for pagination
+- `limit` (int, default 20, max 100) - Page size
+
+**GET /projects:**
+- `completed` (boolean) - Filter by completion status
+- `offset` (int, default 0) - Zero-based offset for pagination
+- `limit` (int, default 20, max 100) - Page size
+
+**Paginated responses (`/tasks`, `/projects`, `/projects/{id}/tasks`):**
+- Response shape: `{ "items": [...], "total": 123, "offset": 0, "limit": 20, "has_more": true }`
 
 ### Request/Response Examples
 

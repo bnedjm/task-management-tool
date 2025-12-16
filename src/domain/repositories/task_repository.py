@@ -77,6 +77,18 @@ class TaskRepository(ABC):
         pass
 
     @abstractmethod
+    def list_by_filter_paginated(
+        self,
+        completed: Optional[bool],
+        overdue: Optional[bool],
+        project_id: Optional[ProjectId],
+        offset: int,
+        limit: int,
+    ) -> tuple[List[Task], int]:
+        """Retrieve tasks with pagination and total count."""
+        pass
+
+    @abstractmethod
     def delete(self, task_id: TaskId) -> None:
         """Delete a task.
 

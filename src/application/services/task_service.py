@@ -1,6 +1,6 @@
 """Task application service."""
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from ...domain.entities.task import Task
 from ...domain.exceptions.project_exceptions import ProjectNotFoundError
@@ -14,6 +14,7 @@ from ..commands.task_commands import (
     ReopenTaskCommand,
     UpdateTaskCommand,
 )
+from ..dto.pagination import PaginatedResult
 from ..dto.task_dto import TaskDTO
 from ..queries.task_queries import GetTaskByIdQuery, ListTasksQuery
 
@@ -282,26 +283,34 @@ class TaskService:
                 raise TaskNotFoundError(query.task_id)
             return self._to_dto(task)
 
-    def list_tasks(self, query: ListTasksQuery) -> List[TaskDTO]:
-        """List tasks with optional filters.
+    def list_tasks(self, query: ListTasksQuery) -> PaginatedResult[TaskDTO]:
+        """List tasks with optional filters and pagination.
 
         Args:
             query: Query containing filter criteria.
 
         Returns:
-            List[TaskDTO]: List of task data.
+            PaginatedResult[TaskDTO]: Paginated list of task data.
         """
         with self._uow:
             project_id = None
             if query.project_id:
                 project_id = ProjectId.from_string(query.project_id)
 
-            tasks = self._uow.tasks.list_by_filter(
+            tasks, total = self._uow.tasks.list_by_filter_paginated(
                 completed=query.completed,
                 overdue=query.overdue,
                 project_id=project_id,
+                offset=query.offset,
+                limit=query.limit,
             )
-            return [self._to_dto(task) for task in tasks]
+            items = [self._to_dto(task) for task in tasks]
+            return PaginatedResult(
+                items=items,
+                total=total,
+                offset=query.offset,
+                limit=query.limit,
+            )
 
     def _to_dto(self, task: Task) -> TaskDTO:
         """Convert Task entity to DTO.

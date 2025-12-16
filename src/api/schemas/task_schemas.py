@@ -1,7 +1,7 @@
 """Pydantic schemas for task API endpoints."""
 
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -69,6 +69,40 @@ class TaskResponse(BaseModel):
                 "is_overdue": False,
                 "created_at": "2025-12-01T10:00:00",
                 "updated_at": "2025-12-10T15:30:00",
+            }
+        }
+    }
+
+
+class PaginatedTasksResponse(BaseModel):
+    """Paginated response schema for tasks."""
+
+    items: List[TaskResponse] = Field(..., description="List of tasks in the current page")
+    total: int = Field(..., description="Total number of tasks matching filters")
+    offset: int = Field(..., description="Zero-based offset of the current page")
+    limit: int = Field(..., description="Maximum items per page")
+    has_more: bool = Field(..., description="Whether more items are available")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "items": [
+                    {
+                        "id": "550e8400-e29b-41d4-a716-446655440000",
+                        "title": "Implement user authentication",
+                        "description": "Add JWT-based authentication to the API",
+                        "deadline": "2025-12-31T23:59:59",
+                        "completed": False,
+                        "project_id": "660e8400-e29b-41d4-a716-446655440000",
+                        "is_overdue": False,
+                        "created_at": "2025-12-01T10:00:00",
+                        "updated_at": "2025-12-10T15:30:00",
+                    }
+                ],
+                "total": 42,
+                "offset": 0,
+                "limit": 20,
+                "has_more": True,
             }
         }
     }

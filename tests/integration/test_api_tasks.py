@@ -136,7 +136,8 @@ class TestTaskRetrieval:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data) >= 2
+        assert len(data["items"]) >= 2
+        assert data["total"] >= len(data["items"])
 
     def test_list_completed_tasks_only(self, client):
         """GET /tasks?completed=true filters completed tasks."""
@@ -167,7 +168,8 @@ class TestTaskRetrieval:
 
         assert response.status_code == 200
         data = response.json()
-        assert all(task["completed"] for task in data)
+        assert all(task["completed"] for task in data["items"])
+        assert data["total"] >= len(data["items"])
 
 
 class TestTaskUpdate:
