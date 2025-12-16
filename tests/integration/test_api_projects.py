@@ -81,7 +81,8 @@ class TestProjectRetrieval:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data) >= 2
+        assert len(data["items"]) >= 2
+        assert data["total"] >= len(data["items"])
 
 
 class TestProjectUpdate:
@@ -702,15 +703,16 @@ class TestGetProjectTasks:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 2
+        assert len(data["items"]) == 2
+        assert data["total"] >= 2
 
         # Verify correct tasks are returned
-        task_ids = [task["id"] for task in data]
+        task_ids = [task["id"] for task in data["items"]]
         assert task1_id in task_ids
         assert task2_id in task_ids
 
         # Verify all tasks belong to the project
-        for task in data:
+        for task in data["items"]:
             assert task["project_id"] == project_id
 
     def test_get_tasks_for_empty_project(self, client):
@@ -731,7 +733,8 @@ class TestGetProjectTasks:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 0
+        assert len(data["items"]) == 0
+        assert data["total"] == 0
 
     def test_get_tasks_for_nonexistent_project_returns_404(self, client):
         """GET /projects/{id}/tasks returns 404 for non-existent project."""
@@ -782,9 +785,10 @@ class TestGetProjectTasks:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 2
+        assert len(data["items"]) == 2
+        assert data["total"] >= 2
 
         # Find tasks in response
-        tasks_by_id = {task["id"]: task for task in data}
+        tasks_by_id = {task["id"]: task for task in data["items"]}
         assert tasks_by_id[completed_task_id]["completed"] is True
         assert tasks_by_id[incomplete_task_id]["completed"] is False

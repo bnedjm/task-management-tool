@@ -1,6 +1,6 @@
 """Project application service."""
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from ...domain.entities.project import Project
 from ...domain.exceptions.project_exceptions import ProjectNotFoundError
@@ -14,6 +14,7 @@ from ..commands.project_commands import (
     UnlinkTaskFromProjectCommand,
     UpdateProjectCommand,
 )
+from ..dto.pagination import PaginatedResult
 from ..dto.project_dto import ProjectDTO
 from ..queries.project_queries import GetProjectByIdQuery, ListProjectsQuery
 
@@ -177,18 +178,28 @@ class ProjectService:
                 raise ProjectNotFoundError(query.project_id)
             return self._to_dto(project)
 
-    def list_projects(self, query: ListProjectsQuery) -> List[ProjectDTO]:
-        """List projects with optional filters.
+    def list_projects(self, query: ListProjectsQuery) -> PaginatedResult[ProjectDTO]:
+        """List projects with optional filters and pagination.
 
         Args:
             query: Query containing filter criteria.
 
         Returns:
-            List[ProjectDTO]: List of project data.
+            PaginatedResult[ProjectDTO]: Paginated list of project data.
         """
         with self._uow:
-            projects = self._uow.projects.list_by_filter(completed=query.completed)
-            return [self._to_dto(project) for project in projects]
+            projects, total = self._uow.projects.list_by_filter_paginated(
+                completed=query.completed,
+                offset=query.offset,
+                limit=query.limit,
+            )
+            items = [self._to_dto(project) for project in projects]
+            return PaginatedResult(
+                items=items,
+                total=total,
+                offset=query.offset,
+                limit=query.limit,
+            )
 
     def link_task_to_project(self, command: LinkTaskToProjectCommand) -> None:
         """Link a task to a project.

@@ -506,8 +506,10 @@ class TestQueryProjects:
         with pytest.raises(ProjectNotFoundError):
             project_service.get_project_by_id(query)
 
-    def test_list_projects_returns_all_projects(self, project_service, mock_uow, mock_event_bus):
-        """Listing projects returns all filtered projects."""
+    def test_list_projects_returns_paginated_projects(
+        self, project_service, mock_uow, mock_event_bus
+    ):
+        """Listing projects returns paginated result with metadata."""
         projects = [
             Project(
                 id=ProjectId.generate(),
@@ -517,18 +519,22 @@ class TestQueryProjects:
             )
             for i in range(3)
         ]
-        mock_uow.projects.list_by_filter.return_value = projects
+        mock_uow.projects.list_by_filter_paginated.return_value = (projects, len(projects))
         mock_uow.projects.get_timestamps.return_value = (
             datetime.now(timezone.utc),
             datetime.now(timezone.utc),
         )
 
-        query = ListProjectsQuery(completed=None)
+        query = ListProjectsQuery(completed=None, offset=0, limit=20)
 
         result = project_service.list_projects(query)
 
-        assert len(result) == 3
-        mock_uow.projects.list_by_filter.assert_called_once_with(completed=None)
+        assert len(result.items) == 3
+        assert result.total == 3
+        assert result.has_more is False
+        mock_uow.projects.list_by_filter_paginated.assert_called_once_with(
+            completed=None, offset=0, limit=20
+        )
 
     def test_list_completed_projects_only(self, project_service, mock_uow, mock_event_bus):
         """Listing with completed filter works correctly."""
@@ -541,19 +547,21 @@ class TestQueryProjects:
                 completed=True,
             )
         ]
-        mock_uow.projects.list_by_filter.return_value = projects
+        mock_uow.projects.list_by_filter_paginated.return_value = (projects, len(projects))
         mock_uow.projects.get_timestamps.return_value = (
             datetime.now(timezone.utc),
             datetime.now(timezone.utc),
         )
 
-        query = ListProjectsQuery(completed=True)
+        query = ListProjectsQuery(completed=True, offset=5, limit=10)
 
         result = project_service.list_projects(query)
 
-        assert len(result) == 1
-        assert result[0].completed is True
-        mock_uow.projects.list_by_filter.assert_called_once_with(completed=True)
+        assert len(result.items) == 1
+        assert result.items[0].completed is True
+        mock_uow.projects.list_by_filter_paginated.assert_called_once_with(
+            completed=True, offset=5, limit=10
+        )
 
 
 class TestTransactionManagement:

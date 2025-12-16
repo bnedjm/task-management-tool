@@ -487,8 +487,8 @@ class TestQueryTasks:
         with pytest.raises(TaskNotFoundError):
             task_service.get_task_by_id(query)
 
-    def test_list_tasks_returns_all_tasks(self, task_service, mock_uow, mock_event_bus):
-        """Listing tasks returns all filtered tasks."""
+    def test_list_tasks_returns_paginated_tasks(self, task_service, mock_uow, mock_event_bus):
+        """Listing tasks returns paginated result with metadata."""
         tasks = [
             Task(
                 id=TaskId.generate(),
@@ -498,19 +498,21 @@ class TestQueryTasks:
             )
             for i in range(3)
         ]
-        mock_uow.tasks.list_by_filter.return_value = tasks
+        mock_uow.tasks.list_by_filter_paginated.return_value = (tasks, len(tasks))
         mock_uow.tasks.get_timestamps.return_value = (
             datetime.now(timezone.utc),
             datetime.now(timezone.utc),
         )
 
-        query = ListTasksQuery(completed=None, overdue=None, project_id=None)
+        query = ListTasksQuery(completed=None, overdue=None, project_id=None, offset=0, limit=20)
 
         result = task_service.list_tasks(query)
 
-        assert len(result) == 3
-        mock_uow.tasks.list_by_filter.assert_called_once_with(
-            completed=None, overdue=None, project_id=None
+        assert len(result.items) == 3
+        assert result.total == 3
+        assert result.has_more is False
+        mock_uow.tasks.list_by_filter_paginated.assert_called_once_with(
+            completed=None, overdue=None, project_id=None, offset=0, limit=20
         )
 
     def test_list_tasks_by_project(self, task_service, mock_uow, mock_event_bus):
@@ -525,19 +527,22 @@ class TestQueryTasks:
                 project_id=project_id,
             )
         ]
-        mock_uow.tasks.list_by_filter.return_value = tasks
+        mock_uow.tasks.list_by_filter_paginated.return_value = (tasks, len(tasks))
         mock_uow.tasks.get_timestamps.return_value = (
             datetime.now(timezone.utc),
             datetime.now(timezone.utc),
         )
 
-        query = ListTasksQuery(completed=None, overdue=None, project_id=str(project_id))
+        query = ListTasksQuery(
+            completed=None, overdue=None, project_id=str(project_id), offset=5, limit=10
+        )
 
         result = task_service.list_tasks(query)
 
-        assert len(result) == 1
-        mock_uow.tasks.list_by_filter.assert_called_once_with(
-            completed=None, overdue=None, project_id=project_id
+        assert len(result.items) == 1
+        assert result.total == 1
+        mock_uow.tasks.list_by_filter_paginated.assert_called_once_with(
+            completed=None, overdue=None, project_id=project_id, offset=5, limit=10
         )
 
 

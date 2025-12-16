@@ -85,29 +85,30 @@ class SQLAlchemyTaskRepository(TaskRepository):
         Returns:
             List[Task]: List of tasks matching the criteria.
         """
-        query = self._session.query(TaskModel)
-
-        if project_id is not None:
-            query = query.filter_by(project_id=str(project_id))
-
-        if completed is not None:
-            query = query.filter_by(completed=completed)
-
-        if overdue is not None:
-            if overdue:
-                # Filter for overdue tasks: not completed and deadline in the past
-                query = query.filter(
-                    TaskModel.completed.is_(False), TaskModel.deadline < datetime.now(timezone.utc)
-                )
-            else:
-                # Filter for not overdue tasks: either completed or deadline in the future
-                query = query.filter(
-                    (TaskModel.completed.is_(True))
-                    | (TaskModel.deadline >= datetime.now(timezone.utc))
-                )
-
-        orm_models = query.all()
+        query = self._build_filtered_query(completed, overdue, project_id)
+        orm_models = query.order_by(TaskModel.created_at.desc(), TaskModel.id.desc()).all()
         return [self._to_domain(model) for model in orm_models]
+
+    def list_by_filter_paginated(
+        self,
+        completed: Optional[bool],
+        overdue: Optional[bool],
+        project_id: Optional[ProjectId],
+        offset: int,
+        limit: int,
+    ) -> tuple[List[Task], int]:
+        """Retrieve tasks with pagination and total count."""
+        base_query = self._build_filtered_query(completed, overdue, project_id)
+        total = base_query.count()
+
+        paged_query = base_query.order_by(TaskModel.created_at.desc(), TaskModel.id.desc()).offset(
+            offset
+        )
+        if limit:
+            paged_query = paged_query.limit(limit)
+
+        orm_models = paged_query.all()
+        return [self._to_domain(model) for model in orm_models], total
 
     def delete(self, task_id: TaskId) -> None:
         """Delete a task.
@@ -168,3 +169,31 @@ class SQLAlchemyTaskRepository(TaskRepository):
             completed=task.is_completed,
             project_id=str(task.project_id) if task.project_id else None,
         )
+
+    def _build_filtered_query(
+        self,
+        completed: Optional[bool],
+        overdue: Optional[bool],
+        project_id: Optional[ProjectId],
+    ):
+        """Create a SQLAlchemy query with common task filters applied."""
+        query = self._session.query(TaskModel)
+
+        if project_id is not None:
+            query = query.filter_by(project_id=str(project_id))
+
+        if completed is not None:
+            query = query.filter_by(completed=completed)
+
+        if overdue is not None:
+            if overdue:
+                query = query.filter(
+                    TaskModel.completed.is_(False), TaskModel.deadline < datetime.now(timezone.utc)
+                )
+            else:
+                query = query.filter(
+                    (TaskModel.completed.is_(True))
+                    | (TaskModel.deadline >= datetime.now(timezone.utc))
+                )
+
+        return query
